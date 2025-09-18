@@ -17,30 +17,3 @@ Deployment: Manages the application's deployment by creating and maintaining a d
 
 Service: Exposes the application using a stable internal IP address and a NodePort, allowing for external access to the application.
 
-Getting Started 🛠️
-To run this project, follow these steps:
-
-Build the Docker Image:
-
-Bash
-
-docker build -t my-app:latest .
-Deploy to Kubernetes:
-
-Bash
-
-kubectl apply -f full-app.yaml
-Verify the Deployment:
-Check that all objects are running in the correct namespace:
-
-Bash
-
-kubectl get all -n dev-project
-Access the Application:
-Find the Minikube IP address and the assigned NodePort for your service:
-
-Bash
-
-minikube ip
-kubectl get service my-app-service -n dev-project
-Then, navigate to your browser and enter the following address: http://[minikube-ip]:[nodeport]
