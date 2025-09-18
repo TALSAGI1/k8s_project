@@ -1,0 +1,100 @@
+# 1. Namespace: יוצר מרחב שמות כדי לבודד את הפרויקט שלנו
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dev-project
+
+---
+
+# 2. ConfigMap: נתונים לא רגישים עבור היישום
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-app-config
+  namespace: dev-project
+data:
+  message: "שלום מ-ConfigMap! הפרויקט עובד!"
+
+---
+
+# 3. Secret: נתונים רגישים עבור היישום
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-app-secret
+  namespace: dev-project
+type: Opaque
+stringData:
+  apiKey: "my-super-secret-key-12345"
+
+---
+
+# 4. Deployment: מגדיר את הפודים והאימג' שלנו
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app-deployment
+  namespace: dev-project
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: my-app-web
+      env: dev
+  template:
+    metadata:
+      labels:
+        app: my-app-web
+        env: dev
+    spec:
+      containers:
+      - name: my-app-container
+        image: my-app:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 5000
+        # הוספת הנתונים מה-ConfigMap וה-Secret כמשתני סביבה
+        envFrom:
+        - configMapRef:
+            name: my-app-config
+        - secretRef:
+            name: my-app-secret
+        # בדיקות תקינות לוודא שהפודים פועלים ומוכנים
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        # הגבלת משאבים למניעת צריכת יתר
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
+
+---
+
+# 5. Service: חשיפת ה-Deployment שלנו באמצעות NodePort
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app-service
+  namespace: dev-project
+spec:
+  selector:
+    app: my-app-web
+    env: dev
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000
+  type: NodePort
